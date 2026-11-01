@@ -1,0 +1,237 @@
+<idea-plugin url="https://yiiguxing.github.io/TranslationPlugin" require-restart="true">
+    <id>cn.yiiguxing.plugin.translate</id>
+    <name>Translation</name>
+    <vendor email="yii.guxing@outlook.com" url="https://github.com/YiiGuxing">Yii.Guxing</vendor>
+
+    <resource-bundle>messages.LanguageBundle</resource-bundle>
+    <resource-bundle>messages.TranslationBundle</resource-bundle>
+
+    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.json</depends>
+    <depends optional="true" config-file="includes/lang.xml">com.intellij.modules.lang</depends>
+    <depends optional="true" config-file="includes/jcef.xml">com.intellij.modules.jcef</depends>
+    <depends optional="true" config-file="includes/rider.xml">com.intellij.modules.rider</depends>
+    <depends optional="true" config-file="includes/jupyter.xml">intellij.jupyter</depends>
+    <depends optional="true" config-file="includes/javaScript-doc.xml">JavaScript</depends>
+    <depends optional="true" config-file="includes/php-doc.xml">com.jetbrains.php</depends>
+
+    <!-- Depends on the "C++ Language Support via ReSharper" plugin for quick documentation translation in CLion. -->
+    <!-- See: cn.yiiguxing.plugin.translate.documentation.provider.DocumentationTargetProviderFactory -->
+    <depends optional="true" config-file="includes/radler.xml">org.jetbrains.plugins.clion.radler</depends>
+
+    <extensionPoints>
+        <extensionPoint name="documentation.elementFilter"
+                        beanClass="com.intellij.lang.LanguageExtensionPoint"
+                        dynamic="true">
+            <with attribute="implementationClass"
+                  implements="cn.yiiguxing.plugin.translate.openapi.documentation.DocumentationElementFilter"/>
+        </extensionPoint>
+    </extensionPoints>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="cn.yiiguxing.plugin.translate.Settings"/>
+        <applicationService serviceImplementation="cn.yiiguxing.plugin.translate.TranslationStates"/>
+        <applicationService serviceImplementation="cn.yiiguxing.plugin.translate.wordbook.WordBookView"/>
+
+        <projectService
+                overrides="true"
+                id="Translation.TranslatableDocumentationTargetProvider"
+                serviceInterface="com.intellij.lang.documentation.ide.IdeDocumentationTargetProvider"
+                serviceImplementation="cn.yiiguxing.plugin.translate.documentation.provider.TranslatableIdeDocumentationTargetProvider"/>
+        <projectService
+                overrides="true"
+                id="Translation.TranslatableInlineDocumentationFinder"
+                serviceInterface="com.intellij.codeInsight.documentation.render.InlineDocumentationFinder"
+                serviceImplementation="cn.yiiguxing.plugin.translate.documentation.service.TranslatableInlineDocumentationFinder"/>
+
+        <platform.backend.documentation.psiTargetProvider
+                order="first"
+                id="Translation.TranslatablePsiDocumentationTargetProvider"
+                implementation="cn.yiiguxing.plugin.translate.documentation.provider.TranslatablePsiDocumentationTargetProvider"/>
+        <platform.backend.documentation.inlineDocumentationProvider
+                order="last"
+                id="Translation.TranslatableInlineDocumentationProvider"
+                implementation="cn.yiiguxing.plugin.translate.documentation.provider.TranslatableInlineDocumentationProvider"/>
+        <platform.backend.documentation.linkHandler
+                id="Translation.TranslatableDocumentationLinkHandler"
+                order="first"
+                implementation="cn.yiiguxing.plugin.translate.documentation.handler.TranslatableDocumentationLinkHandler"/>
+
+        <applicationConfigurable groupId="tools"
+                                 displayName="Translation"
+                                 instance="cn.yiiguxing.plugin.translate.ui.settings.TranslationConfigurableImpl"/>
+
+        <statusBarWidgetFactory id="Translation.Widget"
+                                order="before LineSeparator, after Position, before lineSeparatorWidget, after positionWidget"
+                                implementation="cn.yiiguxing.plugin.translate.ui.TranslationWidgetFactory"/>
+        <toolWindow id="Translation.Wordbook"
+                    icon="TranslationIcons.Wordbook"
+                    anchor="right"
+                    secondary="true"
+                    doNotActivateOnStart="true"
+                    factoryClass="cn.yiiguxing.plugin.translate.wordbook.WordBookToolWindowFactoryImpl"/>
+
+        <backgroundPostStartupActivity implementation="cn.yiiguxing.plugin.translate.update.UpdateManager"/>
+        <backgroundPostStartupActivity
+                implementation="cn.yiiguxing.plugin.translate.activity.IdeaVersionUpgradeNoticeActivity"/>
+        <backgroundPostStartupActivity
+                implementation="cn.yiiguxing.plugin.translate.activity.WordOfTheDayStartupActivity"/>
+        <actionPromoter implementation="cn.yiiguxing.plugin.translate.action.TranslationPromoter"/>
+        <documentationActionProvider
+                implementation="cn.yiiguxing.plugin.translate.documentation.actions.TranslateDocumentationActionProvider"/>
+        <iw.actionProvider
+                implementation="cn.yiiguxing.plugin.translate.documentation.actions.FileInlineDocumentationTranslateActionProvider"/>
+        <editorNotificationProvider
+                implementation="cn.yiiguxing.plugin.translate.ui.notification.banner.EditorBannerProvider"/>
+        <fileEditorProvider implementation="cn.yiiguxing.plugin.translate.view.WebViewProvider"/>
+        <webHelpProvider implementation="cn.yiiguxing.plugin.translate.provider.HelpProvider"/>
+
+        <fileIconProvider
+                implementation="cn.yiiguxing.plugin.translate.trans.openai.config.OpenAiRequestConfigFileIconProvider"/>
+        <editorTabTitleProvider
+                implementation="cn.yiiguxing.plugin.translate.trans.openai.config.OpenAiRequestConfigEditorTabTitleProvider"/>
+
+        <notificationGroup id="Translation Plugin" displayType="BALLOON" isLogByDefault="true"/>
+        <notificationGroup id="Documentation translation failed" displayType="BALLOON" isLogByDefault="true"/>
+        <notificationGroup id="Word Book Import/Export" displayType="BALLOON" isLogByDefault="true"/>
+        <notificationGroup id="Translation Plugin updated" displayType="STICKY_BALLOON" isLogByDefault="false"/>
+
+        <registryKey key="cn.yiiguxing.plugin.translate.http.agent.chromium.version" defaultValue=""
+                     description="HTTP user agent chromium version override"/>
+        <registryKey key="cn.yiiguxing.plugin.translate.webview.debug" defaultValue="false"
+                     description="Enable DevTools menu item in WebView."/>
+        <registryKey key="google.translate.gtx.apiKey" defaultValue=""
+                     description="API key for the GTX client used with Google Translate."/>
+        <registryKey key="google.translate.teLib.apiKey" defaultValue=""
+                     description="API key for the TE_LIB client used with Google Translate."/>
+
+        <iconMapper mappingFile="TranslationIconMappings.json"/>
+    </extensions>
+
+    <actions resource-bundle="messages.TranslationBundle">
+        <action id="Translation.ShowTranslationDialogAction"
+                icon="TranslationIcons.Translation"
+                class="cn.yiiguxing.plugin.translate.action.ShowTranslationDialogAction"
+                use-shortcut-of="Translation.EditorTranslateAction">
+            <add-to-group group-id="MainToolbarRight" relative-to-action="SearchEverywhere" anchor="before"/>
+        </action>
+
+        <action id="Translation.SwitchEngineAction"
+                class="cn.yiiguxing.plugin.translate.action.SwitchEngineAction">
+            <keyboard-shortcut keymap="$default" first-keystroke="control shift S"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control meta Y" replace-all="true"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control meta Y" replace-all="true"/>
+        </action>
+        <action id="Translation.EditorTranslateAction"
+                class="cn.yiiguxing.plugin.translate.action.EditorTranslateAction"
+                icon="TranslationIcons.Translation">
+            <keyboard-shortcut keymap="$default" first-keystroke="control shift Y"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control meta U" replace-all="true"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control meta U" replace-all="true"/>
+        </action>
+        <action id="Translation.ReplaceWithTranslationAction"
+                class="cn.yiiguxing.plugin.translate.action.ReplaceWithTranslationAction"
+                icon="TranslationIcons.TranslationReplace">
+            <keyboard-shortcut keymap="$default" first-keystroke="control shift X"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control meta O"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control meta O" replace-all="true"/>
+        </action>
+        <action id="Translation.InclusiveTranslateAction"
+                class="cn.yiiguxing.plugin.translate.action.InclusiveTranslateAction"/>
+        <action id="Translation.ExclusiveTranslateAction"
+                class="cn.yiiguxing.plugin.translate.action.ExclusiveTranslateAction"/>
+        <action id="Translation.TranslateQuickDocSelectionAction"
+                icon="TranslationIcons.Translation"
+                class="cn.yiiguxing.plugin.translate.action.TranslateTextComponentAction"
+                use-shortcut-of="Translation.EditorTranslateAction"/>
+        <action id="Translation.ShowTranslatedQuickDocInfoAction"
+                icon="TranslationIcons.Translation"
+                class="cn.yiiguxing.plugin.translate.documentation.actions.ShowTranslatedQuickDocInfoAction">
+            <keyboard-shortcut keymap="$default" first-keystroke="control shift Q"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control Q" replace-all="true"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control Q" replace-all="true"/>
+        </action>
+        <action id="Translation.ToggleQuickDocTranslationAction"
+                class="cn.yiiguxing.plugin.translate.documentation.actions.ToggleQuickDocTranslationAction"
+                use-shortcut-of="Translation.ShowTranslatedQuickDocInfoAction"/>
+        <action id="Translation.TranslateRenderedDocSelectionAction"
+                class="cn.yiiguxing.plugin.translate.documentation.actions.TranslateRenderedDocSelectionAction"
+                use-shortcut-of="Translation.EditorTranslateAction"/>
+        <action id="Translation.TranslateTextComponentAction"
+                icon="TranslationIcons.Translation"
+                class="cn.yiiguxing.plugin.translate.action.TranslateTextComponentAction"
+                use-shortcut-of="Translation.EditorTranslateAction"/>
+        <action id="Translation.TerminalTranslationAction"
+                class="cn.yiiguxing.plugin.translate.action.TerminalTranslationAction"
+                icon="TranslationIcons.Translation"
+                use-shortcut-of="Translation.EditorTranslateAction"/>
+        <action id="Translation.ShowWordOfTheDayAction"
+                icon="AllIcons.Actions.IntentionBulb"
+                class="cn.yiiguxing.plugin.translate.action.ShowWordOfTheDayAction"/>
+
+        <action id="Translation.TranslationEngineSettingsAction"
+                icon="TranslationIcons.Config"
+                class="cn.yiiguxing.plugin.translate.action.TranslationEngineSettingsAction"/>
+
+        <action id="Translation.WhatsNewAction" class="cn.yiiguxing.plugin.translate.action.WhatsNewAction"/>
+        <action id="Translation.GettingStartAction" class="cn.yiiguxing.plugin.translate.action.GettingStartedAction"/>
+        <action id="Translation.SupportAction" class="cn.yiiguxing.plugin.translate.action.SupportAction"/>
+
+        <action id="Translation.PinBalloonAction"
+                class="cn.yiiguxing.plugin.translate.action.PinBalloonAction"
+                use-shortcut-of="Translation.EditorTranslateAction">
+        </action>
+
+        <group id="Translation.PopupMenuGroup" text="Translation Popup Menu Actions">
+            <separator/>
+            <reference ref="Translation.EditorTranslateAction"/>
+            <reference ref="Translation.ReplaceWithTranslationAction"/>
+            <separator/>
+
+            <add-to-group group-id="BasicEditorPopupMenu" anchor="first"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+            <add-to-group group-id="ConsoleEditorPopupMenu" anchor="first"/>
+            <add-to-group group-id="Diff.EditorPopupMenu" anchor="first"/>
+        </group>
+        <group id="Translation.ToolBarGroup" text="Translation Toolbar Actions">
+            <separator/>
+            <reference ref="Translation.ShowTranslationDialogAction"/>
+            <separator/>
+
+            <add-to-group group-id="MainToolBar" anchor="last"/>
+        </group>
+        <group id="Translation.ExpandedGroup" popup="true" text="Expanded">
+            <reference ref="Translation.ShowTranslationDialogAction"/>
+            <reference ref="Translation.InclusiveTranslateAction"/>
+            <reference ref="Translation.ExclusiveTranslateAction"/>
+        </group>
+        <group id="Translation.ActionGroup">
+            <separator/>
+            <reference ref="Translation.EditorTranslateAction"/>
+            <reference ref="Translation.ReplaceWithTranslationAction"/>
+            <reference ref="Translation.ExpandedGroup"/>
+            <separator/>
+        </group>
+        <group id="Translation.Documentation.PrimaryGroup">
+            <separator/>
+            <reference ref="Translation.TranslateQuickDocSelectionAction"/>
+            <reference ref="Translation.ToggleQuickDocTranslationAction"/>
+
+            <add-to-group group-id="Documentation.PrimaryGroup"/>
+        </group>
+        <group id="Translation.HelpGroup">
+            <separator/>
+            <group id="Translation.HelpActionGroup" text="Translation" icon="TranslationIcons.Logo" popup="true">
+                <reference ref="Translation.WhatsNewAction"/>
+                <reference ref="Translation.GettingStartAction"/>
+                <reference ref="Translation.SupportAction"/>
+            </group>
+            <separator/>
+
+            <add-to-group group-id="HelpMenu" anchor="before" relative-to-action="WhatsNewAction"/>
+        </group>
+    </actions>
+
+</idea-plugin>

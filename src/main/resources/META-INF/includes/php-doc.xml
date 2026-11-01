@@ -1,0 +1,7 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="cn.yiiguxing.plugin.translate">
+        <documentation.elementFilter
+                language="PHP"
+                implementationClass="cn.yiiguxing.plugin.translate.documentation.filter.PhpDocumentationElementFilter"/>
+    </extensions>
+</idea-plugin>

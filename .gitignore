@@ -1,0 +1,10 @@
+.DS_Store
+.idea/*
+!.idea/icon.svg
+!.idea/vcs.xml
+.gradle
+.kotlin
+.intellijPlatform
+build
+sandbox
+opencode.json*
